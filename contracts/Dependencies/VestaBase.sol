@@ -17,8 +17,14 @@ import "../Interfaces/IVestaBase.sol";
 contract VestaBase is BaseMath, IVestaBase, OwnableUpgradeable {
 	using SafeMathUpgradeable for uint256;
 	address public constant ETH_REF_ADDRESS = address(0);
+	address public wstETH = 0x5979D7b546E38E414F7E9822514be443A4800529;
 
 	IVestaParameters public override vestaParams;
+
+	modifier onlyWstETH(address _asset) {
+		require(wstETH == _asset, "only wstETH collateral is enabled");
+		_;
+	}
 
 	function setVestaParameters(address _vaultParams) public onlyOwner {
 		vestaParams = IVestaParameters(_vaultParams);
@@ -37,22 +43,25 @@ contract VestaBase is BaseMath, IVestaBase, OwnableUpgradeable {
 	}
 
 	// Return the amount of ETH to be drawn from a trove's collateral and sent as gas compensation.
-	function _getCollGasCompensation(address _asset, uint256 _entireColl)
-		internal
-		view
-		returns (uint256)
-	{
+	function _getCollGasCompensation(
+		address _asset,
+		uint256 _entireColl
+	) internal view returns (uint256) {
 		return _entireColl / vestaParams.PERCENT_DIVISOR(_asset);
 	}
 
-	function getEntireSystemColl(address _asset) public view returns (uint256 entireSystemColl) {
+	function getEntireSystemColl(
+		address _asset
+	) public view onlyWstETH(_asset) returns (uint256 entireSystemColl) {
 		uint256 activeColl = vestaParams.activePool().getAssetBalance(_asset);
 		uint256 liquidatedColl = vestaParams.defaultPool().getAssetBalance(_asset);
 
 		return activeColl.add(liquidatedColl);
 	}
 
-	function getEntireSystemDebt(address _asset) public view returns (uint256 entireSystemDebt) {
+	function getEntireSystemDebt(
+		address _asset
+	) public view onlyWstETH(_asset) returns (uint256 entireSystemDebt) {
 		uint256 activeDebt = vestaParams.activePool().getVSTDebt(_asset);
 		uint256 closedDebt = vestaParams.defaultPool().getVSTDebt(_asset);
 

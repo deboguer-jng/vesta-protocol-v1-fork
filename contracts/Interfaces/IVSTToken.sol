@@ -13,25 +13,13 @@ abstract contract IVSTToken is ERC20Permit {
 
 	event VSTTokenBalanceUpdated(address _user, uint256 _amount);
 
-	function emergencyStopMinting(address _asset, bool status) external virtual;
+	function allowMintingCollateral(address _asset, bool status) external virtual;
 
-	function mint(
-		address _asset,
-		address _account,
-		uint256 _amount
-	) external virtual;
+	function mint(address _asset, address _account, uint256 _amount) external virtual;
 
 	function burn(address _account, uint256 _amount) external virtual;
 
-	function sendToPool(
-		address _sender,
-		address poolAddress,
-		uint256 _amount
-	) external virtual;
+	function sendToPool(address _sender, address poolAddress, uint256 _amount) external virtual;
 
-	function returnFromPool(
-		address poolAddress,
-		address user,
-		uint256 _amount
-	) external virtual;
+	function returnFromPool(address poolAddress, address user, uint256 _amount) external virtual;
 }

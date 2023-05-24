@@ -68,7 +68,7 @@ contract BorrowerOperations is VestaBase, CheckContract, IBorrowerOperations {
 		uint256 _VSTAmount,
 		address _upperHint,
 		address _lowerHint
-	) external payable override {
+	) external payable override onlyWstETH(_asset) {
 		vestaParams.sanitizeParameters(_asset);
 
 		ContractsCache memory contractsCache = ContractsCache(
@@ -167,7 +167,7 @@ contract BorrowerOperations is VestaBase, CheckContract, IBorrowerOperations {
 		address _borrower,
 		address _upperHint,
 		address _lowerHint
-	) external payable override {
+	) external payable override onlyWstETH(_asset) {
 		require(
 			stabilityPoolManager.isStabilityPool(msg.sender),
 			"BorrowerOps: Caller is not Stability Pool"
@@ -195,7 +195,7 @@ contract BorrowerOperations is VestaBase, CheckContract, IBorrowerOperations {
 		bool _isDebtIncrease,
 		address _upperHint,
 		address _lowerHint
-	) external payable override {
+	) external payable override onlyWstETH(_asset) {
 		_adjustTrove(
 			_asset,
 			getMethodValue(_asset, _assetSent, true),
@@ -370,11 +370,11 @@ contract BorrowerOperations is VestaBase, CheckContract, IBorrowerOperations {
 		address _asset,
 		uint256 _amountIn,
 		IVestaDexTrader.ManualExchange[] calldata _manualExchange
-	) external {
+	) external onlyWstETH(_asset) {
 		_closeTrove(_asset, _amountIn, _manualExchange);
 	}
 
-	function closeTrove(address _asset) external override {
+	function closeTrove(address _asset) external override onlyWstETH(_asset) {
 		_closeTrove(_asset, 0, new IVestaDexTrader.ManualExchange[](0));
 	}
 
@@ -451,17 +451,9 @@ contract BorrowerOperations is VestaBase, CheckContract, IBorrowerOperations {
 	/**
 	 * Claim remaining collateral from a redemption or from a liquidation with ICR > MCR in Recovery Mode
 	 */
-	function claimCollateral(address _asset) external override {
+	function claimCollateral(address _asset) external override onlyWstETH(_asset) {
 		// send ETH from CollSurplus Pool to owner
 		collSurplusPool.claimColl(_asset, msg.sender);
-	}
-
-	function claimCollaterals(address[] calldata _assets) external override {
-		uint256 length = _assets.length;
-
-		for (uint256 i = 0; i < length; ++i) {
-			collSurplusPool.claimColl(_assets[i], msg.sender);
-		}
 	}
 
 	// --- Helper functions ---
@@ -491,11 +483,10 @@ contract BorrowerOperations is VestaBase, CheckContract, IBorrowerOperations {
 		return usdValue;
 	}
 
-	function _getCollChange(uint256 _collReceived, uint256 _requestedCollWithdrawal)
-		internal
-		pure
-		returns (uint256 collChange, bool isCollIncrease)
-	{
+	function _getCollChange(
+		uint256 _collReceived,
+		uint256 _requestedCollWithdrawal
+	) internal pure returns (uint256 collChange, bool isCollIncrease) {
 		if (_collReceived != 0) {
 			collChange = _collReceived;
 			isCollIncrease = true;
@@ -696,10 +687,10 @@ contract BorrowerOperations is VestaBase, CheckContract, IBorrowerOperations {
 		);
 	}
 
-	function _requireValidMaxFeePercentage(address _asset, uint256 _maxFeePercentage)
-		internal
-		view
-	{
+	function _requireValidMaxFeePercentage(
+		address _asset,
+		uint256 _maxFeePercentage
+	) internal view {
 		require(
 			_maxFeePercentage >= vestaParams.BORROWING_FEE_FLOOR(_asset) &&
 				_maxFeePercentage <= vestaParams.DECIMAL_PRECISION(),
@@ -781,12 +772,10 @@ contract BorrowerOperations is VestaBase, CheckContract, IBorrowerOperations {
 		return (newColl, newDebt);
 	}
 
-	function getCompositeDebt(address _asset, uint256 _debt)
-		external
-		view
-		override
-		returns (uint256)
-	{
+	function getCompositeDebt(
+		address _asset,
+		uint256 _debt
+	) external view override onlyWstETH(_asset) returns (uint256) {
 		return _getCompositeDebt(_asset, _debt);
 	}
 
@@ -811,4 +800,3 @@ contract BorrowerOperations is VestaBase, CheckContract, IBorrowerOperations {
 
 	receive() external payable {}
 }
-

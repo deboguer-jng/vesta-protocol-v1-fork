@@ -14,14 +14,15 @@ contract VSTToken is CheckContract, IVSTToken, Ownable {
 	IStabilityPoolManager public immutable stabilityPoolManager;
 	address public immutable borrowerOperationsAddress;
 
-	mapping(address => bool) public emergencyStopMintingCollateral;
+	mapping(address => bool) public allowMintingCollateral;
 
-	event EmergencyStopMintingCollateral(address _asset, bool state);
+	event AllowMintingCollateral(address _asset, bool state);
 
 	constructor(
 		address _troveManagerAddress,
 		address _stabilityPoolManagerAddress,
-		address _borrowerOperationsAddress
+		address _borrowerOperationsAddress,
+		address _wstWETH
 	) ERC20("Vesta Stable", "VST") {
 		checkContract(_troveManagerAddress);
 		checkContract(_stabilityPoolManagerAddress);
@@ -40,18 +41,14 @@ contract VSTToken is CheckContract, IVSTToken, Ownable {
 	// --- Functions for intra-Vesta calls ---
 
 	//
-	function emergencyStopMinting(address _asset, bool status) external override onlyOwner {
-		emergencyStopMintingCollateral[_asset] = status;
-		emit EmergencyStopMintingCollateral(_asset, status);
+	function allowMintingCollateral(address _asset, bool status) external override onlyOwner {
+		allowMintingCollateral[_asset] = status;
+		emit AllowMintingCollateral(_asset, status);
 	}
 
-	function mint(
-		address _asset,
-		address _account,
-		uint256 _amount
-	) external override {
+	function mint(address _asset, address _account, uint256 _amount) external override {
 		_requireCallerIsBorrowerOperations();
-		require(!emergencyStopMintingCollateral[_asset], "Mint is blocked on this collateral");
+		require(allowMintingCollateral[_asset], "Mint is blocked on this collateral");
 
 		_mint(_account, _amount);
 	}
